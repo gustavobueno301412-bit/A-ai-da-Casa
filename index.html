@@ -75,8 +75,8 @@
             <input type="text" id="endereco" placeholder="Endereço completo">
             <select id="pagamento" onchange="verificarTroco()">
                 <option value="" disabled selected>Escolha a forma de pagamento 💳</option>
-                <option value="Pix">Pix</option>
-                <option value="Cartão">Cartão</option>
+                <option value="Pix">Pix (Chave PIX pelo Whatsapp)</option>
+                <option value="Cartão">Cartão (Enviaremos a Maquinínha)</option>
                 <option value="Dinheiro">Dinheiro</option>
             </select>
             <input type="text" id="troco-valor" placeholder="Troco para quanto?" style="display:none;">
@@ -118,7 +118,7 @@
                     <img src="${col[5]}" onerror="this.src='https://via.placeholder.com/60?text=Açaí'">
                     <div>${col[2]}</div>
                     <div class="preco-display" style="color:var(--roxo); font-weight:bold;">R$ ${parseFloat(col[3]).toFixed(2)}</div>
-                    <button class="btn-add" onclick="adicionar(this, '${col[2]}', ${parseFloat(col[3])}, '${col[1]}')">Adicionar 🛒</button>
+                    <button class="btn-add" onclick="adicionar(this, '${col[2]}', ${parseFloat(col[3])}, '${col[1]}')">Adicionar ➕</button>
                 </div>`;
         });
         calcularTotal();
