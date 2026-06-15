@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Açaí da Casa - Pedido</title>
+    <title>Açaí da Casa 🏠🫐 - Pedido</title>
     <style>
         :root {
             --roxo: #4B0082;
@@ -47,8 +47,9 @@
     <header>
         <img id="logo-loja" src="" onerror="this.style.display='none'">
         <h1 style="color:var(--roxo); margin:5px 0;">Açaí da Casa 🏠🫐</h1>
+        <h1 style="color:var(--roxo); margin:5px 0;">3 Sabores Grátis 😋</h1>
     </header>
-
+        
     <div class="copo-container">
         <div class="copo-vidro" id="visual-copo"></div>
     </div>
@@ -113,11 +114,16 @@
         linhas.forEach(l => {
             const col = l.split('\t');
             if(col.length < 5 || col[4]?.trim() !== 'SIM') return;
+           
+            // Definição do rótulo inicial de preço
+            const isGratis = col[1].trim() === 'Gratis';
+            const precoDisplayInicial = isGratis ? 'Grátis' : 'R$ ' + parseFloat(col[3]).toFixed(2);
+
             grid.innerHTML += `
                 <div class="card" data-cat="${col[1].trim()}" data-preco="${parseFloat(col[3])}">
                     <img src="${col[5]}" onerror="this.src='https://via.placeholder.com/60?text=Açaí'">
                     <div>${col[2]}</div>
-                    <div class="preco-display" style="color:var(--roxo); font-weight:bold;">R$ ${parseFloat(col[3]).toFixed(2)}</div>
+                    <div class="preco-display" style="color:var(--roxo); font-weight:bold;">${precoDisplayInicial}</div>
                     <button class="btn-add" onclick="adicionar(this, '${col[2]}', ${parseFloat(col[3])}, '${col[1]}')">Adicionar ➕</button>
                 </div>`;
         });
@@ -154,7 +160,7 @@
                 if(countGratis >= 3) {
                     display.innerText = "R$ 2.00";
                 } else {
-                    display.innerText = "R$ 0.00";
+                    display.innerText = "Grátis";
                 }
             }
         });
@@ -222,13 +228,8 @@
        
         msg += `\n🚀 *Aguardando confirmação!*`;
 
-        // O encodeURIComponent vai converter tudo corretamente agora
         window.open(`https://wa.me/${whatsappPedido}?text=${encodeURIComponent(msg)}`);
     }
-
- 
-
-    
 
     carregarDados();
 </script>
