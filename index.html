@@ -118,7 +118,7 @@
                     <img src="${col[5]}" onerror="this.src='https://via.placeholder.com/60?text=Açaí'">
                     <div>${col[2]}</div>
                     <div class="preco-display" style="color:var(--roxo); font-weight:bold;">R$ ${parseFloat(col[3]).toFixed(2)}</div>
-                    <button class="btn-add" onclick="adicionar(this, '${col[2]}', ${parseFloat(col[3])}, '${col[1]}')">Add ➕</button>
+                    <button class="btn-add" onclick="adicionar(this, '${col[2]}', ${parseFloat(col[3])}, '${col[1]}')">Adicionar 🛒</button>
                 </div>`;
         });
         calcularTotal();
@@ -203,20 +203,32 @@
         if(!nome) return alert("Digite seu nome!");
         if(tipo === 'Entrega' && (!endereco || !pag)) return alert("Preencha o endereço e a forma de pagamento!");
 
-        let msg = `🛍️ Pedido de ${nome}%0A%0A`;
-        carrinho.forEach(i => msg += `• ${i.nome}%0A`);
-        msg += `%0A💰 ${document.getElementById('total-final').innerText}`;
+        // Montando a mensagem de forma organizada
+        let msg = `🛍️ *NOVO PEDIDO - AÇAÍ DA CASA*\n\n`;
+        msg += `👤 *Cliente:* ${nome}\n\n`;
+        msg += `📋 *Itens:\n`;
+        carrinho.forEach(i => msg += `• ${i.nome}\n`);
+       
+        msg += `\n💰 *Valor Total:* ${document.getElementById('total-final').innerText}\n`;
        
         if(tipo === 'Entrega') {
-            msg += `%0A🏠 Endereço: ${endereco}`;
-            msg += `%0A💳 Pagamento: ${pag}`;
-            if(pag === 'Dinheiro' && troco) msg += `%0A💵 Troco para: ${troco}`;
-            if(pag === 'Pix') msg += `%0A📱 Enviaremos o Pix pelo WhatsApp.`;
-            if(pag === 'Cartão') msg += `%0A💳 Enviaremos a maquininha de cartão.`;
+            msg += `\n🏠 *Dados de Entrega:*\n`;
+            msg += `📍 *Endereço:* ${endereco}\n`;
+            msg += `💳 *Forma de Pagamento:* ${pag}\n`;
+            if(pag === 'Dinheiro' && troco) msg += `💵 *Troco para:* ${troco}\n`;
+        } else {
+            msg += `\n🏪 *Retirada na loja*\n`;
         }
        
+        msg += `\n🚀 *Aguardando confirmação!*`;
+
+        // O encodeURIComponent vai converter tudo corretamente agora
         window.open(`https://wa.me/${whatsappPedido}?text=${encodeURIComponent(msg)}`);
     }
+
+ 
+
+    
 
     carregarDados();
 </script>
