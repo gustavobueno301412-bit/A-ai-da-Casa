@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Açaí da Casa - Pedido</title>
+    <style>
+        :root {
+            --roxo: #4B0082;
+            --laranja: #FF8C00;
+            --branco: #ffffff;
+            --fundo: #f9f4ff; /* Lilás bem clarinho para combinar com a marca */
+        }
+        body { font-family: sans-serif; background-color: var(--fundo); margin: 0; padding: 10px; color: #333; }
+        .container { max-width: 500px; margin: 0 auto; }
+        header { text-align: center; margin-bottom: 20px; }
+        #logo-loja { width: 120px; height: 120px; border-radius: 50%; border: 4px solid var(--laranja); object-fit: cover; }
+       
+        .copo-container { display: flex; justify-content: center; margin: 15px 0; }
+        .copo-vidro { width: 130px; height: 220px; border: 4px solid var(--roxo); border-bottom-left-radius: 30px; border-bottom-right-radius: 30px; background: #fff; display: flex; flex-direction: column-reverse; overflow: hidden; box-shadow: 0 5px 15px rgba(75,0,130,0.1); }
+        .camada { width: 100%; height: 30px; border-top: 1px solid rgba(255,255,255,0.3); color: white; font-size: 10px; display: flex; align-items: center; justify-content: center; font-weight: bold; text-align: center; padding: 0 2px; }
+
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .card { background: var(--branco); border-radius: 10px; padding: 10px; text-align: center; border: 1px solid #eee; box-shadow: 0 2px 5px rgba(0,0,0,0.05); font-size: 0.9em; transition: border 0.3s; }
+        .card:hover { border: 1px solid var(--roxo); }
+        .card img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-bottom: 5px; }
+        .btn-add { background: var(--laranja); color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 5px; transition: transform 0.1s; }
+       
+        /* Efeito de pulso ao clicar */
+        .btn-clicked { animation: clickEffect 0.3s ease-out; }
+        @keyframes clickEffect {
+            0% { transform: scale(1); background-color: var(--laranja); }
+            50% { transform: scale(0.9); background-color: #ffb74d; }
+            100% { transform: scale(1); background-color: var(--laranja); }
+        }
+       
+        .painel { background: var(--branco); padding: 15px; border-radius: 10px; margin-top: 15px; border: 1px solid #eee; }
+        .linha-total { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; }
+        .btn-finalizar { background: #25d366; color: white; border: none; padding: 12px; width: 100%; font-size: 1.1em; font-weight: bold; border-radius: 10px; cursor: pointer; margin-top: 15px; }
+        input, select { width: 100%; padding: 10px; margin-top: 10px; box-sizing: border-box; border-radius: 8px; border: 1px solid #ddd; outline: none; }
+        input:focus, select:focus { border: 1px solid var(--roxo); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <img id="logo-loja" src="" onerror="this.style.display='none'">
+        <h1 style="color:var(--roxo); margin:5px 0;">Açaí da Casa 🏠🫐</h1>
+    </header>
+
+    <div class="copo-container">
+        <div class="copo-vidro" id="visual-copo"></div>
+    </div>
+
+    <div id="grid-produtos" class="grid">Carregando cardápio...</div>
+
+    <div class="painel">
+        <h3>🛒 Seu Pedido</h3>
+        <div id="lista-carrinho"></div>
+        <div style="margin-top:10px; border-top:2px solid #eee; padding-top:10px;">
+            <div class="linha-total"><span>Subtotal:</span> <span id="subtotal-valor">R$ 0.00</span></div>
+            <div class="linha-total"><span>Taxa de Entrega:</span> <span id="taxa-valor">R$ 0.00</span></div>
+            <div class="linha-total" style="color:var(--roxo); font-size: 1.2em;"><span>TOTAL:</span> <span id="total-final">R$ 0.00</span></div>
+        </div>
+       
+        <input type="text" id="nome-cliente" placeholder="Seu Nome">
+       
+        <select id="tipo-entrega" onchange="alternarEntrega(); calcularTotal();">
+            <option value="Retirada">Retirada na Loja 🏪</option>
+            <option value="Entrega">Entrega em Casa 🏠</option>
+        </select>
+
+        <div id="campos-entrega" style="display:none;">
+            <input type="text" id="endereco" placeholder="Endereço completo">
+            <select id="pagamento" onchange="verificarTroco()">
+                <option value="" disabled selected>Escolha a forma de pagamento 💳</option>
+                <option value="Pix">Pix</option>
+                <option value="Cartão">Cartão</option>
+                <option value="Dinheiro">Dinheiro</option>
+            </select>
+            <input type="text" id="troco-valor" placeholder="Troco para quanto?" style="display:none;">
+        </div>
+
+        <button class="btn-finalizar" onclick="finalizarPedido()">Enviar Pedido no WhatsApp 🚀</button>
+    </div>
+</div>
+
+<script>
+    const urlProdutos = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSdK8WCPPkXTSK1L6iCLZ3yVmCfbsQ6UBeC0-Q0lUcNBV_SXcMo-LTdrWQC4CCxkA7ibLSsGsw6df7E/pub?gid=0&single=true&output=tsv';
+    const urlConfig = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSdK8WCPPkXTSK1L6iCLZ3yVmCfbsQ6UBeC0-Q0lUcNBV_SXcMo-LTdrWQC4CCxkA7ibLSsGsw6df7E/pub?gid=1820002365&single=true&output=tsv';
+
+    let taxaEntrega = 0;
+    let whatsappPedido = "";
+    let carrinho = [];
+
+    async function carregarDados() {
+        const resConf = await fetch(urlConfig);
+        const textConf = await resConf.text();
+        textConf.split('\n').forEach(l => {
+            const c = l.split('\t');
+            if(c[0]?.trim() === 'Taxa') taxaEntrega = parseFloat(c[1]);
+            if(c[0]?.trim() === 'WhatsApp Pedidos') whatsappPedido = c[1]?.trim();
+            if(c[0]?.trim() === 'Link da Logo') document.getElementById('logo-loja').src = c[1]?.trim();
+        });
+
+        const resProd = await fetch(urlProdutos);
+        const textProd = await resProd.text();
+        const linhas = textProd.split('\n').slice(1);
+        const grid = document.getElementById('grid-produtos');
+        grid.innerHTML = "";
+
+        linhas.forEach(l => {
+            const col = l.split('\t');
+            if(col.length < 5 || col[4]?.trim() !== 'SIM') return;
+            grid.innerHTML += `
+                <div class="card" data-cat="${col[1].trim()}" data-preco="${parseFloat(col[3])}">
+                    <img src="${col[5]}" onerror="this.src='https://via.placeholder.com/60?text=Açaí'">
+                    <div>${col[2]}</div>
+                    <div class="preco-display" style="color:var(--roxo); font-weight:bold;">R$ ${parseFloat(col[3]).toFixed(2)}</div>
+                    <button class="btn-add" onclick="adicionar(this, '${col[2]}', ${parseFloat(col[3])}, '${col[1]}')">Add ➕</button>
+                </div>`;
+        });
+        calcularTotal();
+    }
+
+    function alternarEntrega() {
+        const tipo = document.getElementById('tipo-entrega').value;
+        const campos = document.getElementById('campos-entrega');
+        campos.style.display = (tipo === 'Entrega') ? 'block' : 'none';
+    }
+
+    function verificarTroco() {
+        const pag = document.getElementById('pagamento').value;
+        const trocoInput = document.getElementById('troco-valor');
+        trocoInput.style.display = (pag === 'Dinheiro') ? 'block' : 'none';
+    }
+
+    function adicionar(btn, nome, preco, cat) {
+        btn.classList.add('btn-clicked');
+        setTimeout(() => btn.classList.remove('btn-clicked'), 300);
+
+        carrinho.push({nome, preco, cat});
+        atualizarVisual();
+        calcularTotal();
+        atualizarPrecosCards();
+    }
+
+    function atualizarPrecosCards() {
+        const countGratis = carrinho.filter(i => i.cat.trim() === 'Gratis').length;
+        document.querySelectorAll('.card').forEach(card => {
+            if(card.getAttribute('data-cat') === 'Gratis') {
+                const display = card.querySelector('.preco-display');
+                if(countGratis >= 3) {
+                    display.innerText = "R$ 2.00";
+                } else {
+                    display.innerText = "R$ 0.00";
+                }
+            }
+        });
+    }
+
+    function atualizarVisual() {
+        const lista = document.getElementById('lista-carrinho');
+        const visualCopo = document.getElementById('visual-copo');
+        lista.innerHTML = carrinho.map((item, i) => `
+            <div style="display:flex; justify-content:space-between; margin:5px 0; font-size:0.9em;">
+                <span>${item.nome}</span>
+                <span onclick="carrinho.splice(${i},1); atualizarVisual(); calcularTotal(); atualizarPrecosCards();" style="cursor:pointer; color:red;">🗑️</span>
+            </div>`).join('');
+
+        visualCopo.innerHTML = carrinho.map(i => `
+            <div class="camada" style="background: ${i.cat.trim() === 'Tamanho' ? 'var(--roxo)' : 'var(--laranja)'}">
+                ${i.nome}
+            </div>`).join('');
+    }
+
+    function calcularTotal() {
+        const gratuitos = carrinho.filter(i => i.cat.trim() === 'Gratis');
+        const outros = carrinho.filter(i => i.cat.trim() !== 'Gratis');
+
+        let precoGratuitos = 0;
+        if (gratuitos.length > 3) {
+            precoGratuitos = (gratuitos.length - 3) * 2.00;
+        }
+
+        const subOutros = outros.reduce((acc, curr) => acc + curr.preco, 0);
+        const sub = precoGratuitos + subOutros;
+        const entrega = document.getElementById('tipo-entrega').value === 'Entrega' ? taxaEntrega : 0;
+       
+        document.getElementById('subtotal-valor').innerText = `R$ ${sub.toFixed(2)}`;
+        document.getElementById('taxa-valor').innerText = entrega > 0 ? `R$ ${entrega.toFixed(2)}` : 'Grátis';
+        document.getElementById('total-final').innerText = `R$ ${(sub + entrega).toFixed(2)}`;
+    }
+
+    function finalizarPedido() {
+        const nome = document.getElementById('nome-cliente').value;
+        const tipo = document.getElementById('tipo-entrega').value;
+        const endereco = document.getElementById('endereco').value;
+        const pag = document.getElementById('pagamento').value;
+        const troco = document.getElementById('troco-valor').value;
+
+        if(!nome) return alert("Digite seu nome!");
+        if(tipo === 'Entrega' && (!endereco || !pag)) return alert("Preencha o endereço e a forma de pagamento!");
+
+        let msg = `🛍️ Pedido de ${nome}%0A%0A`;
+        carrinho.forEach(i => msg += `• ${i.nome}%0A`);
+        msg += `%0A💰 ${document.getElementById('total-final').innerText}`;
+       
+        if(tipo === 'Entrega') {
+            msg += `%0A🏠 Endereço: ${endereco}`;
+            msg += `%0A💳 Pagamento: ${pag}`;
+            if(pag === 'Dinheiro' && troco) msg += `%0A💵 Troco para: ${troco}`;
+            if(pag === 'Pix') msg += `%0A📱 Enviaremos o Pix pelo WhatsApp.`;
+            if(pag === 'Cartão') msg += `%0A💳 Enviaremos a maquininha de cartão.`;
+        }
+       
+        window.open(`https://wa.me/${whatsappPedido}?text=${encodeURIComponent(msg)}`);
+    }
+
+    carregarDados();
+</script>
+</body>
+</html>
+
+ 
