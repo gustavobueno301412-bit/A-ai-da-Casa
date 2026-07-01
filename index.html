@@ -9,12 +9,23 @@
             --roxo: #4B0082;
             --laranja: #FF8C00;
             --branco: #ffffff;
-            --fundo: #f9f4ff; /* Lilás bem clarinho para combinar com a marca */
+            --fundo: #f9f4ff;
         }
         body { font-family: sans-serif; background-color: var(--fundo); margin: 0; padding: 10px; color: #333; }
         .container { max-width: 500px; margin: 0 auto; }
+       
+        #banner-container { margin-bottom: 15px; text-align: center; }
+        #banner-img {
+            width: 100%;
+            max-height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            display: none;
+            transition: opacity 0.5s ease;
+        }
+
         header { text-align: center; margin-bottom: 20px; }
-        #logo-loja { width: 120px; height: 120px; border-radius: 50%; border: 4px solid var(--laranja); object-fit: cover; }
        
         .copo-container { display: flex; justify-content: center; margin: 15px 0; }
         .copo-vidro { width: 130px; height: 220px; border: 4px solid var(--roxo); border-bottom-left-radius: 30px; border-bottom-right-radius: 30px; background: #fff; display: flex; flex-direction: column-reverse; overflow: hidden; box-shadow: 0 5px 15px rgba(75,0,130,0.1); }
@@ -26,7 +37,6 @@
         .card img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-bottom: 5px; }
         .btn-add { background: var(--laranja); color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 5px; transition: transform 0.1s; }
        
-        /* Efeito de pulso ao clicar */
         .btn-clicked { animation: clickEffect 0.3s ease-out; }
         @keyframes clickEffect {
             0% { transform: scale(1); background-color: var(--laranja); }
@@ -44,15 +54,18 @@
 <body>
 
 <div class="container">
+    <div id="banner-container"><img id="banner-img" src="" alt="Banner"></div>
+
     <header>
-        <img id="logo-loja" src="" onerror="this.style.display='none'">
         <h1 style="color:var(--roxo); margin:5px 0;">Açaí da Casa 🏠🫐</h1>
         <h1 style="color:var(--roxo); margin:5px 0;">3 Sabores Grátis 😋</h1>
     </header>
-        
+       
     <div class="copo-container">
         <div class="copo-vidro" id="visual-copo"></div>
     </div>
+
+    <input type="text" id="campo-busca" placeholder="🔍 Buscar produtos..." onkeyup="filtrarProdutos()">
 
     <div id="grid-produtos" class="grid">Carregando cardápio...</div>
 
@@ -90,10 +103,13 @@
 <script>
     const urlProdutos = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSdK8WCPPkXTSK1L6iCLZ3yVmCfbsQ6UBeC0-Q0lUcNBV_SXcMo-LTdrWQC4CCxkA7ibLSsGsw6df7E/pub?gid=0&single=true&output=tsv';
     const urlConfig = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSdK8WCPPkXTSK1L6iCLZ3yVmCfbsQ6UBeC0-Q0lUcNBV_SXcMo-LTdrWQC4CCxkA7ibLSsGsw6df7E/pub?gid=1820002365&single=true&output=tsv';
+    const urlBanners = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSdK8WCPPkXTSK1L6iCLZ3yVmCfbsQ6UBeC0-Q0lUcNBV_SXcMo-LTdrWQC4CCxkA7ibLSsGsw6df7E/pub?gid=1131858891&single=true&output=tsv';
 
     let taxaEntrega = 0;
     let whatsappPedido = "";
     let carrinho = [];
+    let banners = [];
+    let bannerIndex = 0;
 
     async function carregarDados() {
         const resConf = await fetch(urlConfig);
@@ -102,8 +118,24 @@
             const c = l.split('\t');
             if(c[0]?.trim() === 'Taxa') taxaEntrega = parseFloat(c[1]);
             if(c[0]?.trim() === 'WhatsApp Pedidos') whatsappPedido = c[1]?.trim();
-            if(c[0]?.trim() === 'Link da Logo') document.getElementById('logo-loja').src = c[1]?.trim();
         });
+
+        const resBanner = await fetch(urlBanners);
+        const textBanner = await resBanner.text();
+        const linhasBanner = textBanner.split('\n').slice(1);
+        linhasBanner.forEach(l => {
+            const col = l.split('\t');
+            if(col[1]) banners.push(col[1].trim());
+        });
+       
+        if(banners.length > 0) {
+            const img = document.getElementById('banner-img');
+            img.src = banners[0];
+            img.style.display = "block";
+            if(banners.length > 1) {
+                setInterval(trocarBanner, 3000);
+            }
+        }
 
         const resProd = await fetch(urlProdutos);
         const textProd = await resProd.text();
@@ -115,7 +147,6 @@
             const col = l.split('\t');
             if(col.length < 5 || col[4]?.trim() !== 'SIM') return;
            
-            // Definição do rótulo inicial de preço
             const isGratis = col[1].trim() === 'Gratis';
             const precoDisplayInicial = isGratis ? 'Grátis' : 'R$ ' + parseFloat(col[3]).toFixed(2);
 
@@ -128,6 +159,23 @@
                 </div>`;
         });
         calcularTotal();
+    }
+
+    function trocarBanner() {
+        bannerIndex = (bannerIndex + 1) % banners.length;
+        const img = document.getElementById('banner-img');
+        img.style.opacity = 0;
+        setTimeout(() => {
+            img.src = banners[bannerIndex];
+            img.style.opacity = 1;
+        }, 500);
+    }
+
+    function filtrarProdutos() {
+        let input = document.getElementById('campo-busca').value.toLowerCase();
+        document.querySelectorAll('.card').forEach(card => {
+            card.style.display = card.innerText.toLowerCase().includes(input) ? "" : "none";
+        });
     }
 
     function alternarEntrega() {
@@ -209,10 +257,9 @@
         if(!nome) return alert("Digite seu nome!");
         if(tipo === 'Entrega' && (!endereco || !pag)) return alert("Preencha o endereço e a forma de pagamento!");
 
-        // Montando a mensagem de forma organizada
         let msg = `🛍️ *NOVO PEDIDO - AÇAÍ DA CASA*\n\n`;
         msg += `👤 *Cliente:* ${nome}\n\n`;
-        msg += `📋 *Itens:\n`;
+        msg += `📋 *Itens:*\n`;
         carrinho.forEach(i => msg += `• ${i.nome}\n`);
        
         msg += `\n💰 *Valor Total:* ${document.getElementById('total-final').innerText}\n`;
